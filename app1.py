@@ -1,5 +1,5 @@
-# app.py — OCR Cute Edition basado en el código del profesor (cv2 + pytesseract)
-import io, os, re, base64
+# app.py — OCR Cute Edition basado en el código del profesor
+import re
 from datetime import datetime
 
 import streamlit as st
@@ -9,8 +9,8 @@ import pytesseract
 from pytesseract import Output
 from PIL import Image, ImageOps, ImageFilter, ImageDraw
 
-# ──────────────────────────────────────────────
-# Config general + tema cute (texto negro)
+# ─────────────────────────────────────────────────────
+# Configuración y tema (texto negro para alto contraste)
 st.set_page_config(page_title="OCR Cute – Reconocimiento de Caracteres", page_icon="📸", layout="wide")
 
 PALETTES = {
@@ -53,68 +53,30 @@ def apply_theme(p):
     """
     st.markdown(css, unsafe_allow_html=True)
 
-# Sidebar (tema + sticker + filtros)
+# Sidebar
 with st.sidebar:
     st.markdown("## 🎀 Estilo")
     theme_name = st.selectbox("Paleta", list(PALETTES.keys()), index=0)
-    sticker = st.selectbox("Sticker", ["Gatito lector 🐱", "Estrella ✨", "Libreta 📒"], index=0)
     st.markdown("## 🎛️ Filtro base")
     filtro = st.radio("Aplicar Filtro",('Con Filtro', 'Sin Filtro'), index=0)
 
 apply_theme(PALETTES[theme_name])
 
-# Header con explicación y sticker (sin corazones)
-colL, colR = st.columns([1.2,1], vertical_alignment="center")
-with colL:
-    st.markdown("# Reconocimiento óptico de\nCaracteres (OCR)")
-    st.markdown(
-        "- **OCR** convierte **imágenes** (fotos/escaneos) en **texto editable**.\n"
-        "- Flujo: 1) Captura/carga la imagen · 2) Pre-procesamiento (mejorar contraste) · 3) OCR · 4) Copia o descarga el texto.\n"
-        "- Útil para: apuntes, facturas, formularios, carteles, libros y más."
-    )
-    st.markdown(
-        '<div class="chip">📸 Cámara</div> <div class="chip">🖼️ Upload</div> '
-        '<div class="chip">🔤 OCR</div> <div class="chip">💾 TXT</div>', unsafe_allow_html=True
-    )
-with colR:
-    if sticker == "Gatito lector 🐱":
-        svg = """
-        <svg viewBox="0 0 320 160" xmlns="http://www.w3.org/2000/svg">
-         <defs><linearGradient id="bg" x1="0" x2="1"><stop stop-color="#B8F2CF"/><stop offset="1" stop-color="#FFD0E0"/></linearGradient></defs>
-         <rect x="0" y="0" width="320" height="160" rx="20" fill="url(#bg)" opacity="0.35"/>
-         <g transform="translate(70,30)">
-           <ellipse cx="50" cy="60" rx="48" ry="40" fill="#fff"/>
-           <path d="M20 40 L35 20 L40 45 Z" fill="#fff"/><path d="M80 40 L65 20 L60 45 Z" fill="#fff"/>
-           <circle cx="40" cy="60" r="6" fill="#111"/><circle cx="60" cy="60" r="6" fill="#111"/>
-           <path d="M35 75 Q50 85 65 75" stroke="#111" stroke-width="3" fill="none"/>
-           <rect x="25" y="80" width="50" height="22" rx="4" fill="#8a6bff"/><line x1="50" y1="80" x2="50" y2="102" stroke="#fff"/>
-         </g>
-         <text x="160" y="145" text-anchor="middle" font-size="16" fill="#111" font-family="Arial">Lee imágenes y conviértelas en texto</text>
-        </svg>"""
-    elif sticker == "Estrella ✨":
-        svg = """
-        <svg viewBox="0 0 320 160" xmlns="http://www.w3.org/2000/svg">
-          <defs><linearGradient id="bg" x1="0" x2="1"><stop stop-color="#FFD0E0"/><stop offset="1" stop-color="#D8CEFF"/></linearGradient></defs>
-          <rect x="0" y="0" width="320" height="160" rx="20" fill="url(#bg)" opacity="0.35"/>
-          <g transform="translate(110,35)"><path d="M50 0 L61 34 H96 L67 55 L78 89 L50 69 L22 89 L33 55 L4 34 H39 Z" fill="#ffb400"/></g>
-          <text x="160" y="145" text-anchor="middle" font-size="16" fill="#111" font-family="Arial">Ilumina textos ocultos en tus fotos</text>
-        </svg>"""
-    else:
-        svg = """
-        <svg viewBox="0 0 320 160" xmlns="http://www.w3.org/2000/svg">
-          <defs><linearGradient id="bg" x1="0" x2="1"><stop stop-color="#B8F2CF"/><stop offset="1" stop-color="#FFEEDC"/></linearGradient></defs>
-          <rect x="0" y="0" width="320" height="160" rx="20" fill="url(#bg)" opacity="0.35"/>
-          <rect x="70" y="35" width="180" height="90" rx="10" fill="#fff"/><line x1="120" y1="35" x2="120" y2="125" stroke="#ffd0e0"/>
-          <text x="95" y="60" font-size="12" fill="#111" font-family="Arial">Notas</text>
-          <text x="145" y="60" font-size="12" fill="#111" font-family="Arial">OCR</text>
-          <text x="160" y="145" text-anchor="middle" font-size="16" fill="#111" font-family="Arial">Digitaliza tus apuntes rápidamente</text>
-        </svg>"""
-    st.markdown(f'<div class="card">{svg}</div>', unsafe_allow_html=True)
+# ─────────────────────────────────────────────────────
+# Encabezado y explicación
+st.title("Reconocimiento óptico de caracteres (OCR)")
+st.caption("Convierte imágenes (fotos/escaneos) en texto editable")
 
+st.markdown(
+    "- **OCR** convierte **imágenes** en **texto** que puedes copiar/editar.\n"
+    "- Flujo: 1) Captura o sube la imagen · 2) Preprocesa para mejorar contraste · 3) Ejecuta OCR · 4) Copia o descarga el resultado.\n"
+    "- Usos: apuntes, facturas, formularios, carteles, libros, etc."
+)
+st.markdown('<div class="chip">📸 Cámara</div> <div class="chip">🖼️ Upload</div> <div class="chip">🔤 OCR</div> <div class="chip">💾 TXT</div>', unsafe_allow_html=True)
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
-# ──────────────────────────────────────────────
-# Controles de idioma y entrada (manteniendo cámara del profe)
+# ─────────────────────────────────────────────────────
+# Controles de idioma y PSM (Tesseract)
 LANGS = {
     "Español (spa)": "spa",
     "English (eng)": "eng",
@@ -125,38 +87,44 @@ LANGS = {
 }
 c1, c2, c3 = st.columns([1,1,1])
 with c1:
-    langs = st.multiselect("Idiomas del OCR (instalados en Tesseract)", list(LANGS.keys()), default=["Español (spa)","English (eng)"])
+    langs = st.multiselect("Idiomas del OCR (instalados en Tesseract)", list(LANGS.keys()),
+                           default=["Español (spa)","English (eng)"])
     lang_arg = "+".join(LANGS[k] for k in langs) if langs else "spa"
 with c2:
     psm = st.selectbox("Modo de segmentación (PSM)", [
         "3 – Fully automatic",
-        "6 – Assume a single uniform block of text",
-        "7 – Treat image as a single text line",
+        "6 – Single uniform block",
+        "7 – Single text line",
         "11 – Sparse text",
     ], index=0)
     psm_value = int(psm.split(" ")[0])
 with c3:
     show_boxes = st.toggle("Resaltar palabras detectadas", value=True)
 
-# Entrada: cámara o subir imagen
-use_camera = st.toggle("Usar cámara", value=True)
-img_file_buffer = None
-img_input = None
+# ─────────────────────────────────────────────────────
+# ENTRADA estable: Cámara o Upload (con key fija)
+use_camera = st.toggle("Usar cámara", value=True, key="use_camera")
 
+cv2_img = None
 if use_camera:
-    st.markdown("### Toma una Foto")
-    img_file_buffer = st.camera_input("Take Photo")
+    st.subheader("Toma una foto")
+    img_file_buffer = st.camera_input(
+        "Cámara",
+        key="camera_widget",
+        help="Si no ves la cámara: permite acceso en el navegador y recarga la página."
+    )
     if img_file_buffer is not None:
         bytes_data = img_file_buffer.getvalue()
         cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
 else:
-    st.markdown("### Sube una imagen")
-    up = st.file_uploader("PNG/JPG", type=["png","jpg","jpeg"])
-    if up:
+    st.subheader("Sube una imagen")
+    up = st.file_uploader("PNG/JPG", type=["png","jpg","jpeg"], key="uploader_widget")
+    if up is not None:
         bytes_data = up.read()
         cv2_img = cv2.imdecode(np.frombuffer(bytes_data, np.uint8), cv2.IMREAD_COLOR)
 
-# Filtros adicionales (además del invertir del profe)
+# ─────────────────────────────────────────────────────
+# Preprocesamiento: filtro del profe + extras simples
 st.markdown("### Pre-procesamiento")
 colA, colB, colC, colD = st.columns(4)
 with colA:
@@ -170,9 +138,10 @@ with colD:
 
 def apply_filters(cv2_img, filtro_base="Con Filtro"):
     img = cv2_img.copy()
+    # Filtro original del profesor
     if filtro_base == 'Con Filtro':
         img = cv2.bitwise_not(img)
-    # PIL para algunas ops rápidas
+
     pil = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
     if use_gray:
         pil = ImageOps.grayscale(pil)
@@ -180,19 +149,19 @@ def apply_filters(cv2_img, filtro_base="Con Filtro"):
         pil = ImageOps.autocontrast(pil)
     if use_blur:
         pil = pil.filter(ImageFilter.MedianFilter(size=3))
-    # Binarizar simple
     if use_threshold:
-        arr = np.array(pil if pil.mode=="L" else pil.convert("L"))
-        thr = int(arr.mean()*0.9)
-        arr = (arr > thr).astype(np.uint8)*255
+        arr = np.array(pil if pil.mode == "L" else pil.convert("L"))
+        thr = int(arr.mean() * 0.9)
+        arr = (arr > thr).astype(np.uint8) * 255
         pil = Image.fromarray(arr, mode="L")
+
     return pil
 
 img_proc = None
-if 'cv2_img' in locals() and cv2_img is not None:
+if cv2_img is not None:
     img_proc = apply_filters(cv2_img, filtro)
 
-# Mostrar imágenes
+# Mostrar original y preprocesada
 if img_proc is not None:
     cX, cY = st.columns(2)
     with cX:
@@ -202,13 +171,11 @@ if img_proc is not None:
         st.markdown("#### Pre-procesada")
         st.image(img_proc, use_column_width=True)
 
-# ──────────────────────────────────────────────
-# OCR con pytesseract (manteniendo el espíritu del profe)
+# ─────────────────────────────────────────────────────
+# OCR con pytesseract (texto + cajas)
 def ocr_text_and_boxes(pil_img: Image.Image, lang: str, psm_v: int):
     config = f'--oem 3 --psm {psm_v}'
-    # Texto plano
     text = pytesseract.image_to_string(pil_img, lang=lang, config=config)
-    # Data con cajas
     data = pytesseract.image_to_data(pil_img, lang=lang, config=config, output_type=Output.DICT)
     return text, data
 
@@ -222,26 +189,31 @@ if go and img_proc is not None:
         try:
             text_out, data = ocr_text_and_boxes(img_proc, lang_arg, psm_value)
             st.success("¡Listo! Texto extraído 🎉")
+
             if show_boxes and "text" in data:
                 overlay_img = img_proc.convert("RGB").copy()
                 draw = ImageDraw.Draw(overlay_img)
                 n = len(data["text"])
+                # usa el color de acento del tema
                 color_hex = PALETTES[theme_name]["--accent"]
-                # Convertir hex a RGB
-                color = tuple(int(color_hex.lstrip('#')[i:i+2], 16) for i in (0, 2, 4)) if color_hex.startswith('#') else (255,0,0)
+                color = (255, 0, 0)
+                if color_hex.startswith("#") and len(color_hex) == 7:
+                    color = tuple(int(color_hex[i:i+2], 16) for i in (1, 3, 5))
                 for i in range(n):
                     txt = data["text"][i]
-                    conf = int(data["conf"][i]) if data["conf"][i].isdigit() else -1
-                    if txt and conf > 40:  # umbral de confianza
+                    conf_str = str(data["conf"][i])
+                    conf = int(conf_str) if conf_str.isdigit() else -1
+                    if txt and conf > 40:
                         x, y, w, h = data["left"][i], data["top"][i], data["width"][i], data["height"][i]
                         draw.rectangle([(x, y), (x+w, y+h)], outline=color, width=2)
         except pytesseract.TesseractNotFoundError:
-            st.error("No se encontró **Tesseract**. Instálalo y, si es necesario, configura su ruta en `pytesseract.pytesseract.tesseract_cmd`.")
+            st.error("No se encontró **Tesseract**. Instálalo y, si hace falta, configura su ruta en `pytesseract.pytesseract.tesseract_cmd`.")
         except Exception as e:
             st.error("Ocurrió un error ejecutando el OCR.")
             st.caption(f"Detalle técnico: {e}")
 
-# Mostrar resultados
+# ─────────────────────────────────────────────────────
+# Resultados y acciones
 if text_out:
     if overlay_img:
         st.markdown("#### Detecciones")
@@ -250,27 +222,23 @@ if text_out:
     st.markdown("#### Texto reconocido")
     st.text_area("Resultado", value=text_out, height=220)
 
-    # Copiar al portapapeles
+    # Copiar al portapapeles (JS)
     st.markdown(
         f"""
         <script>
         const txt = {repr(text_out)};
         navigator.clipboard.writeText(txt);
         </script>
-        """, unsafe_allow_html=True
+        """,
+        unsafe_allow_html=True
     )
     st.toast("Texto copiado al portapapeles ✅")
 
     # Descargar TXT
     fname = f"ocr_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-    st.download_button("⬇️ Descargar TXT", data=text_out.encode("utf-8"), file_name=fname, mime="text/plain")
+    st.download_button("⬇️ Descargar TXT", data=text_out.encode("utf-8"),
+                       file_name=fname, mime="text/plain")
 
 st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 st.caption("Tip: usa buena luz y mantén el documento recto. Si el texto sale tenue, activa **Autocontraste** y **Umbral**.")
-
-    
-
-
-    
-
 
