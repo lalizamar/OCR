@@ -8,7 +8,7 @@ from PIL import Image
 from datetime import datetime
 
 # ── Config básica ───────────────────────────────────────
-st.set_page_config(page_title="📸✨ OCR Kawaii", page_icon="🧁", layout="centered")
+st.set_page_config(page_title="📸✨ OCR ", page_icon="🧁", layout="centered")
 
 # ── Tema cute (suave, sin romper widgets) ───────────────
 PALETTES = {
